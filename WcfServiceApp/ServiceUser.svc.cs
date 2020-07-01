@@ -4,11 +4,14 @@ using System.Data.SqlClient;
 using System.Data;
 using System.Threading.Tasks;
 using System.Web.Configuration;
+using DevTrends.WCFDataAnnotations;
 
 namespace WcfServiceApp
 {
     // NOTE: You can use the "Rename" command on the "Refactor" menu to change the class name "Service1" in code, svc and config file together.
     // NOTE: In order to launch WCF Test Client for testing this service, please select Service1.svc or Service1.svc.cs at the Solution Explorer and start debugging.
+
+    [ValidateDataAnnotationsBehavior]
     public class ServiceUser : IServiceUser
     {
         SqlConnection con =
@@ -30,7 +33,7 @@ namespace WcfServiceApp
                 {
                     SqlCommand cmd =
                         new SqlCommand(
-                            "insert into UserTable(UserId,Firstname,Surname,DateOfBirth,Gender,Mobile,Email,WorkMobile) values(@userid,@firstname,@surname,@dob,@gender,@mobile,@email,@work_mobile)",
+                            "insert into UserTable(UserId,Firstname,Surname,DOB,Gender,Mobile,Email,WorkMobile,DateCreated,DateUpdated) values (@userid,@firstname,@surname,@dob,@gender,@mobile,@email,@work_mobile,@datecreated,@dateupdated)",
                             con);
 
                     cmd.Parameters.AddWithValue("@userid", Guid.NewGuid().ToString("N"));
@@ -40,7 +43,9 @@ namespace WcfServiceApp
                     cmd.Parameters.AddWithValue("@gender", userInfo.Gender);
                     cmd.Parameters.AddWithValue("@mobile", userInfo.Mobile);
                     cmd.Parameters.AddWithValue("@email", userInfo.Email);
-                    cmd.Parameters.AddWithValue("@work_mobile", userInfo.Workmobile);
+                    cmd.Parameters.AddWithValue("@work_mobile", userInfo.WorkMobile);
+                    cmd.Parameters.AddWithValue("@datecreated", DateTime.Now);
+                    cmd.Parameters.AddWithValue("@dateupdated", DateTime.Now);
 
                     int result = await cmd.ExecuteNonQueryAsync();
 
@@ -76,7 +81,7 @@ namespace WcfServiceApp
                 con.Open();
                 SqlCommand cmd =
                     new SqlCommand(
-                        "insert into AddressTable(User_ID,Address_type,Address,City,Province,[Zip/Postal_Code]) values(@userid,@address_type,@address,@city,@province,@zip)",
+                        "insert into AddressTable(Id,UserID,AddressType,Address,City,Province,[ZipCode_PostalCode],DateCreated) values(@Id,@userid,@address_type,@address,@city,@province,@zip,@datecreated)",
                         con);
 
                 cmd.Parameters.AddWithValue("@id", Guid.NewGuid().ToString("N"));
@@ -86,6 +91,8 @@ namespace WcfServiceApp
                 cmd.Parameters.AddWithValue("@city", userInfo.City);
                 cmd.Parameters.AddWithValue("@province", userInfo.Province);
                 cmd.Parameters.AddWithValue("@zip", userInfo.Zipcode_PostalCode);
+                cmd.Parameters.AddWithValue("@datecreated", DateTime.Now);
+                cmd.Parameters.AddWithValue("@dateupdated", DateTime.Now);
 
                 int result = await cmd.ExecuteNonQueryAsync();
 
@@ -107,15 +114,17 @@ namespace WcfServiceApp
         }
 
         //Get All Users
-        public async Task<IEnumerable<UserDetails>> GetAll(UserDetails userInfo)
+        public async Task<IEnumerable<UserDetails>> GetAll(UserSearchQuery query)
         {
             var users = new List<UserDetails>();
             try
             {
                 con.Open();
-                using (SqlCommand cmd = new SqlCommand("Select * from UserTable", con))
+                using (SqlCommand cmd = new SqlCommand("Select * from UserTable Order By DateUpdated desc OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY", con))
                 {
-                    cmd.Parameters.AddWithValue("@userId", userInfo.Userid);
+                    cmd.Parameters.AddWithValue("@offset", query.Offset);
+                    cmd.Parameters.AddWithValue("@limit", query.Limit);
+
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
                     if (reader.HasRows)
@@ -129,11 +138,13 @@ namespace WcfServiceApp
                                 user.Userid = reader.IsDBNull(0) ? null : reader.GetString(0);
                                 user.Firstname = reader.IsDBNull(0) ? null : reader.GetString(1);
                                 user.Surname = reader.IsDBNull(0) ? null : reader.GetString(2);
-                                user.DOB = reader.IsDBNull(0) ? null : reader.GetString(3);
+                                user.DOB = reader.IsDBNull(0) ? DateTime.MinValue : reader.GetDateTime(3);
                                 user.Gender = reader.IsDBNull(0) ? null : reader.GetString(4);
                                 user.Mobile = reader.IsDBNull(0) ? null : reader.GetString(5);
                                 user.Email = reader.IsDBNull(0) ? null : reader.GetString(6);
-                                user.Workmobile = reader.IsDBNull(0) ? null : reader.GetString(7);
+                                user.WorkMobile = reader.IsDBNull(0) ? null : reader.GetString(7);
+                                user.DateCreated = reader.IsDBNull(0) ? DateTime.MinValue : reader.GetDateTime(8);
+                                user.DateUpdated = reader.IsDBNull(0) ? DateTime.MinValue : reader.GetDateTime(9);
 
                                 users.Add(user);
                             }
@@ -199,7 +210,7 @@ namespace WcfServiceApp
                 con.Open();
                 using (SqlCommand cmd =
                     new SqlCommand(
-                        "Select Address_type,Address,City,[Zip/Postal_Code],Province from UserAddressTable where Id = @id",
+                        "Select AddressType,Address,City,[ZipCode_Postal_Code],Province from UserAddressTable where Id = @id",
                         con))
                 {
                     cmd.Parameters.AddWithValue("@id", userInfo.Id);
@@ -237,7 +248,7 @@ namespace WcfServiceApp
             {
                 using (SqlCommand cmd =
                     new SqlCommand(
-                        "Select Address_type,Address,City,[Zip/Postal_Code],Province from UserAddressTable where User_ID = @userid",
+                        "Select AddressType,Address,City,[ZipCode_Postal_Code],Province from UserAddressTable where User_ID = @userid",
                         con))
                 {
                     cmd.Parameters.AddWithValue("@userid", userInfo.UserId);
@@ -257,7 +268,10 @@ namespace WcfServiceApp
                                 address.AddressType = reader.IsDBNull(0) ? null : reader.GetString(3);
                                 address.City = reader.IsDBNull(0) ? null : reader.GetString(4);
                                 address.Province = reader.IsDBNull(0) ? null : reader.GetString(5);
-                                address.Zipcode_PostalCode = reader.IsDBNull(0) ? null : reader.GetString(6);
+                                address.Zipcode_PostalCode = reader.IsDBNull(0) ? 0 : reader.GetInt32(6);
+                                address.DateCreated = reader.IsDBNull(0) ? DateTime.MinValue : reader.GetDateTime(7);
+                                address.DateUpdated = reader.IsDBNull(0) ? DateTime.MinValue : reader.GetDateTime(8);
+
                                 addresses.Add(address);
                             }
                             catch (Exception ex)
@@ -290,7 +304,7 @@ namespace WcfServiceApp
                 con.Open();
                 using (SqlCommand cmd =
                     new SqlCommand(
-                        "UPDATE UserTable SET Firstname = @name, Surname = @surname,Date_of_birth = @dob,Gender = @gender,Mobile = @mobile,Email = @email,Work_mobile =@work WHERE id = @userid",
+                        "UPDATE UserTable SET Firstname = @name, Surname = @surname, DOB = @dob, Gender = @gender, Mobile = @mobile, Email = @email, WorkMobile = @work, DateUpdated = @dateupdated WHERE UserId = @userid",
                         con))
                 {
                     cmd.Parameters.AddWithValue("@name", userInfo.Firstname);
@@ -299,8 +313,9 @@ namespace WcfServiceApp
                     cmd.Parameters.AddWithValue("@gender", userInfo.Gender);
                     cmd.Parameters.AddWithValue("@mobile", userInfo.Mobile);
                     cmd.Parameters.AddWithValue("@email", userInfo.Email);
-                    cmd.Parameters.AddWithValue("@work", userInfo.Workmobile);
+                    cmd.Parameters.AddWithValue("@work", userInfo.WorkMobile);
                     cmd.Parameters.AddWithValue("@userid", userInfo.Userid);
+                    cmd.Parameters.AddWithValue("@dateupdated", DateTime.Now);
 
                     cmd.Connection = con;
                     con.Open();
@@ -334,10 +349,16 @@ namespace WcfServiceApp
                 con.Open();
                 using (SqlCommand cmd =
                     new SqlCommand(
-                        "UPDATE UserAddressTable SET Firstname = @name, Surname = @surname,Date_of_birth = @dob,Gender = @gender,Mobile = @mobile,Email = @email,Work_mobile =@work WHERE id = @userid",
+                        "UPDATE UserAddressTable SET Address = @address, AddressType = @addresstype, City = @city, Province = @province, ZipCode_PostalCode = @zip, DateUpdated = @dateupdated WHERE Id = @id",
                         con))
                 {
-                    cmd.Parameters.AddWithValue("@userid", userInfo.UserId);
+                    cmd.Parameters.AddWithValue("@id", userInfo.Id);
+                    cmd.Parameters.AddWithValue("@address", userInfo.Address);
+                    cmd.Parameters.AddWithValue("@addresstype", userInfo.AddressType);
+                    cmd.Parameters.AddWithValue("@city", userInfo.Id);
+                    cmd.Parameters.AddWithValue("@province", userInfo.Id);
+                    cmd.Parameters.AddWithValue("@zip", userInfo.Id);
+                    cmd.Parameters.AddWithValue("@dateupdated", DateTime.Now);
 
                     cmd.Connection = con;
                     con.Open();

@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.Threading.Tasks;
+using DevTrends.WCFDataAnnotations;
 
 namespace WcfServiceApp
 {
@@ -15,7 +18,7 @@ namespace WcfServiceApp
         Task<UserData> Get(UserDetails userInfo);
 
         [OperationContract]
-        Task<IEnumerable<UserDetails>> GetAll(UserDetails userInfo);
+        Task<IEnumerable<UserDetails>> GetAll(UserSearchQuery query);
 
         [OperationContract]
         Task<UserAddress> GetAddress(UserAddressDetails addressInfo);
@@ -72,11 +75,42 @@ namespace WcfServiceApp
     {
         public UserAddress()
         {
-            this.AddressTable = new DataTable("UserAddress");
+            this.AddressTable = new DataTable("UserAddressTable");
         }
 
         [DataMember]
         public DataTable AddressTable { get; set; }
+    }
+
+    public class UserSearchQuery
+    { 
+        int limit = 20;
+        int offset = 0;
+
+        UserDetails userquery;
+
+        [DataMember]
+        public int Limit
+        {
+            get { return limit; }
+            set { limit = value; }
+
+        }
+
+        [DataMember]
+        public int Offset
+        {
+            get { return offset; }
+            set { offset = value; }
+        }
+
+        [DataMember]
+        public UserDetails UserQuery
+        {
+            get { return userquery; }
+            set { userquery = value; }
+
+        }
     }
 
     public class UserAddressDetails
@@ -87,7 +121,9 @@ namespace WcfServiceApp
         string address_type = string.Empty;
         string city = string.Empty;
         string province = string.Empty;
-        string zipcode_postalcode = string.Empty;
+        int zipcode_postalcode = 0;
+        DateTime datecreated = DateTime.MinValue;
+        DateTime dateupdated = DateTime.MinValue;
 
         [DataMember]
         public string Id
@@ -96,28 +132,36 @@ namespace WcfServiceApp
             set { id = value; }
         }
 
+     
         [DataMember]
+        [Required]
         public string UserId
         {
             get { return userid; }
             set { userid = value; }
         }
 
+      
         [DataMember]
+        [Required]
         public string Address
         {
             get { return address; }
             set { address = value; }
         }
 
+       
         [DataMember]
+        [Required]
         public string AddressType
         {
             get { return address_type; }
             set { address_type = value; }
         }
 
+       
         [DataMember]
+        [Required]
         public string City
         {
             get { return city; }
@@ -125,6 +169,7 @@ namespace WcfServiceApp
         }
 
         [DataMember]
+        [Required]
         public string Province
         {
             get { return province; }
@@ -132,23 +177,41 @@ namespace WcfServiceApp
         }
 
         [DataMember]
-        public string Zipcode_PostalCode
+        [Required]
+        public int Zipcode_PostalCode
         {
             get { return zipcode_postalcode; }
             set { zipcode_postalcode = value; }
         }
+
+        [DataMember]
+        public DateTime DateCreated
+        {
+            get { return datecreated; }
+            set { datecreated = value; }
+        }
+
+        [DataMember]
+        public DateTime DateUpdated
+        {
+            get { return dateupdated; }
+            set { dateupdated = value; }
+        }
     }
 
+    [DataContract]
     public class UserDetails
     {
         string userid = string.Empty;
         string firstname = string.Empty;
         string surname = string.Empty;
-        string dob = string.Empty;
+        DateTime dob = DateTime.MinValue;
         string gender = string.Empty;
         string mobile = string.Empty;
         string email = string.Empty;
         string workmobile = string.Empty;
+        DateTime datecreated = DateTime.MinValue;
+        DateTime dateupdated = DateTime.MinValue;
 
         [DataMember]
         public string Userid
@@ -158,6 +221,7 @@ namespace WcfServiceApp
         }
 
         [DataMember]
+        [Required]
         public string Firstname
         {
             get { return firstname; }
@@ -165,6 +229,7 @@ namespace WcfServiceApp
         }
 
         [DataMember]
+        [Required]
         public string Surname
         {
             get { return surname; }
@@ -172,13 +237,15 @@ namespace WcfServiceApp
         }
 
         [DataMember]
-        public string DOB
+        [Required]
+        public DateTime DOB
         {
             get { return dob; }
             set { dob = value; }
         }
 
         [DataMember]
+        [Required]
         public string Gender
         {
             get { return gender; }
@@ -186,6 +253,7 @@ namespace WcfServiceApp
         }
 
         [DataMember]
+        [Required]
         public string Mobile
         {
             get { return mobile; }
@@ -194,6 +262,8 @@ namespace WcfServiceApp
 
 
         [DataMember]
+        [Required]
+        [RegularExpression(@"\b[A-Z0-9._%-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b", ErrorMessage = "Invalid email")]
         public string Email
         {
             get { return email; }
@@ -201,10 +271,25 @@ namespace WcfServiceApp
         }
 
         [DataMember]
-        public string Workmobile
+        [Required]
+        public string WorkMobile
         {
             get { return workmobile; }
             set { workmobile = value; }
+        }
+
+        [DataMember]
+        public DateTime DateCreated
+        {
+            get { return datecreated; }
+            set { datecreated = value; }
+        }
+
+        [DataMember]
+        public DateTime DateUpdated
+        {
+            get { return dateupdated; }
+            set { dateupdated = value; }
         }
     }
 }
