@@ -58,8 +58,6 @@ namespace WcfServiceApp
         public DataTable ExportTable { get; set; }
     }
 
-
-
     [DataContract]
     public class UserData
     {
@@ -85,7 +83,6 @@ namespace WcfServiceApp
     }
 
     public class UserAddressDetails
-
     {
         string id = string.Empty;
         string userid = string.Empty;
