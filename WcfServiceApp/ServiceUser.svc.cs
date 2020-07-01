@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
+using System.Threading.Tasks;
 using System.Web.Configuration;
 
 namespace WcfServiceApp
@@ -13,7 +14,7 @@ namespace WcfServiceApp
         SqlConnection con =
             new SqlConnection(WebConfigurationManager.ConnectionStrings["DBConstring"].ConnectionString);
 
-        public bool InsertUserDetails(UserDetails userInfo)
+        public async Task<bool> InsertUserDetails(UserDetails userInfo)
         {
             bool success = false;
 
@@ -41,7 +42,7 @@ namespace WcfServiceApp
                     cmd.Parameters.AddWithValue("@email", userInfo.Email);
                     cmd.Parameters.AddWithValue("@work_mobile", userInfo.Workmobile);
 
-                    int result = cmd.ExecuteNonQuery();
+                    int result = await cmd.ExecuteNonQueryAsync();
 
                     if (result == 1)
                     {
@@ -66,7 +67,7 @@ namespace WcfServiceApp
             return success;
         }
 
-        public bool InsertUserAddress(UserAddressDetails userInfo)
+        public async Task<bool> InsertUserAddress(UserAddressDetails userInfo)
         {
             bool success = false;
 
@@ -86,7 +87,7 @@ namespace WcfServiceApp
                 cmd.Parameters.AddWithValue("@province", userInfo.Province);
                 cmd.Parameters.AddWithValue("@zip", userInfo.Zipcode_PostalCode);
 
-                int result = cmd.ExecuteNonQuery();
+                int result = await cmd.ExecuteNonQueryAsync();
 
                 if (result == 1)
                 {
@@ -106,7 +107,7 @@ namespace WcfServiceApp
         }
 
         //Get All Users
-        public IEnumerable<UserDetails> GetAll(UserDetails userInfo)
+        public async Task<IEnumerable<UserDetails>> GetAll(UserDetails userInfo)
         {
             var users = new List<UserDetails>();
             try
@@ -115,7 +116,7 @@ namespace WcfServiceApp
                 using (SqlCommand cmd = new SqlCommand("Select * from UserTable", con))
                 {
                     cmd.Parameters.AddWithValue("@userId", userInfo.Userid);
-                    SqlDataReader reader = cmd.ExecuteReader();
+                    SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
                     if (reader.HasRows)
                     {
@@ -157,7 +158,7 @@ namespace WcfServiceApp
         }
 
         //Get User
-        public UserData Get(UserDetails userInfo)
+        public async Task<UserData> Get(UserDetails userInfo)
         {
             var users = new UserData();
             try
@@ -190,7 +191,7 @@ namespace WcfServiceApp
         }
 
         //Get Address
-        public UserAddress GetAddress(UserAddressDetails userInfo)
+        public async Task<UserAddress> GetAddress(UserAddressDetails userInfo)
         {
             var addresses = new UserAddress();
             try
@@ -228,7 +229,7 @@ namespace WcfServiceApp
         }
 
         //Get All User's Addresses
-        public IEnumerable<UserAddressDetails> GetUserAddress(UserAddressDetails userInfo)
+        public async Task<IEnumerable<UserAddressDetails>> GetUserAddress(UserAddressDetails userInfo)
         {
             var addresses = new List<UserAddressDetails>();
 
@@ -241,7 +242,7 @@ namespace WcfServiceApp
                 {
                     cmd.Parameters.AddWithValue("@userid", userInfo.UserId);
 
-                    SqlDataReader reader = cmd.ExecuteReader();
+                    SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
                     if (reader.HasRows)
                     {
@@ -280,7 +281,7 @@ namespace WcfServiceApp
         }
 
         //Update User
-        public bool Update(UserDetails userInfo)
+        public async Task<bool> Update(UserDetails userInfo)
         {
             bool success = false;
 
@@ -303,7 +304,7 @@ namespace WcfServiceApp
 
                     cmd.Connection = con;
                     con.Open();
-                    int result = cmd.ExecuteNonQuery();
+                    int result = await cmd.ExecuteNonQueryAsync();
 
                     if (result == 1)
                     {
@@ -324,7 +325,7 @@ namespace WcfServiceApp
         }
 
         //Update Address 
-        public bool UpdateAddress(UserAddressDetails userInfo)
+        public async Task<bool> UpdateAddress(UserAddressDetails userInfo)
         {
             bool success = false;
 
@@ -340,7 +341,7 @@ namespace WcfServiceApp
 
                     cmd.Connection = con;
                     con.Open();
-                    int result = cmd.ExecuteNonQuery();
+                    int result = await cmd.ExecuteNonQueryAsync();
 
                     if (result == 1)
                     {
@@ -360,7 +361,7 @@ namespace WcfServiceApp
             return success;
         }
 
-        public bool Delete(string Id)
+        public async Task<bool> Delete(string Id)
         {
             bool success = false;
 
@@ -372,7 +373,7 @@ namespace WcfServiceApp
 
                     cmd.Connection = con;
                     con.Open();
-                    int result = cmd.ExecuteNonQuery();
+                    int result = await cmd.ExecuteNonQueryAsync();
 
                     if (result == 1)
                     {
@@ -392,7 +393,7 @@ namespace WcfServiceApp
             return success;
         }
 
-        public bool DeleteAddress(string Id)
+        public async Task<bool> DeleteAddress(string Id)
         {
             bool success = false;
             try
@@ -403,7 +404,7 @@ namespace WcfServiceApp
 
                     cmd.Connection = con;
                     con.Open();
-                    int result = cmd.ExecuteNonQuery();
+                    int result = await cmd.ExecuteNonQueryAsync();
 
                     if (result == 1)
                     {
@@ -426,7 +427,7 @@ namespace WcfServiceApp
             return success;
         }
 
-        public ExportData GetAllExportDetails()
+        public async Task<ExportData> GetAllExportDetails()
         {
 
             using (SqlCommand cmd = new SqlCommand("select usrT.Firstname, usrT.Surname,usrT.Gender,usrT.Mobile,usrT.Work_mobile,usrT.Email ,addrT.Address_type,addrT.Address,addrT.City,addrT.Province,addrT.[Zip/Postal_Code] " +

@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using System.Runtime.Serialization;
 using System.ServiceModel;
-using System.ServiceModel.Web;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace WcfServiceApp
 {
@@ -15,35 +12,35 @@ namespace WcfServiceApp
     {
         //Select statements
         [OperationContract]
-        UserData Get(UserDetails userInfo);
+        Task<UserData> Get(UserDetails userInfo);
 
         [OperationContract]
-        IEnumerable<UserDetails> GetAll(UserDetails userInfo);
+        Task<IEnumerable<UserDetails>> GetAll(UserDetails userInfo);
 
         [OperationContract]
-        UserAddress GetAddress(UserAddressDetails addressInfo);
+        Task<UserAddress> GetAddress(UserAddressDetails addressInfo);
 
         [OperationContract]
-        IEnumerable<UserAddressDetails> GetUserAddress(UserAddressDetails addressInfo);
+        Task<IEnumerable<UserAddressDetails>> GetUserAddress(UserAddressDetails addressInfo);
 
         [OperationContract]
-        ExportData GetAllExportDetails();
+        Task<ExportData> GetAllExportDetails();
 
         //Insert statements
         [OperationContract]
-        bool InsertUserDetails(UserDetails userInfo);
+        Task<bool> InsertUserDetails(UserDetails userInfo);
         [OperationContract]
-        bool InsertUserAddress(UserAddressDetails addressInfo);
+        Task<bool> InsertUserAddress(UserAddressDetails addressInfo);
 
         //update statements
         [OperationContract]
-        bool Update(UserDetails userInfo);
-        bool UpdateAddress(UserAddressDetails addressInfo);
+        Task<bool> Update(UserDetails userInfo);
+        Task<bool> UpdateAddress(UserAddressDetails addressInfo);
 
         //Delete statements
         [OperationContract]
-        bool Delete(string Id);
-        bool DeleteAddress(string Id);
+        Task<bool> Delete(string Id);
+        Task<bool> DeleteAddress(string Id);
     }
 
     [DataContract]
