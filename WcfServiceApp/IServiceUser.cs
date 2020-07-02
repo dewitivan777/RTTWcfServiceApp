@@ -31,19 +31,19 @@ namespace WcfServiceApp
 
         //Insert statements
         [OperationContract]
-        Task<bool> InsertUserDetails(UserDetails userInfo);
+        Task<ServerResponse> InsertUserDetails(UserDetails userInfo);
         [OperationContract]
-        Task<bool> InsertUserAddress(UserAddressDetails addressInfo);
+        Task<ServerResponse> InsertUserAddress(UserAddressDetails addressInfo);
 
         //update statements
         [OperationContract]
-        Task<bool> Update(UserDetails userInfo);
-        Task<bool> UpdateAddress(UserAddressDetails addressInfo);
+        Task<ServerResponse> Update(UserDetails userInfo);
+        Task<ServerResponse> UpdateAddress(UserAddressDetails addressInfo);
 
         //Delete statements
         [OperationContract]
-        Task<bool> Delete(string Id);
-        Task<bool> DeleteAddress(string Id);
+        Task<ServerResponse> Delete(string Id);
+        Task<ServerResponse> DeleteAddress(string Id);
     }
 
     [DataContract]
@@ -82,6 +82,29 @@ namespace WcfServiceApp
         public DataTable AddressTable { get; set; }
     }
 
+    [DataContract]
+    public class ServerResponse
+    {
+         bool success = false;
+         private string error_message = string.Empty;
+
+         [DataMember]
+         public bool Success
+         {
+             get { return success; }
+             set { success = value; }
+
+         }
+
+         [DataMember]
+         public string ErrorMessage
+        {
+             get { return error_message; }
+             set { error_message = value; }
+         }
+    }
+
+    [DataContract]
     public class UserSearchQuery
     { 
         int limit = 20;
@@ -214,7 +237,7 @@ namespace WcfServiceApp
         DateTime dateupdated = DateTime.MinValue;
 
         [DataMember]
-        public string Userid
+        public string UserId
         {
             get { return userid; }
             set { userid = value; }
@@ -254,6 +277,7 @@ namespace WcfServiceApp
 
         [DataMember]
         [Required]
+        [RegularExpression(@"\(?\d{3}\)?-? *\d{3}-? *-?\d{4}", ErrorMessage = "Invalid number. Must have a length of 10")]
         public string Mobile
         {
             get { return mobile; }
@@ -263,7 +287,7 @@ namespace WcfServiceApp
 
         [DataMember]
         [Required]
-        [RegularExpression(@"\b[A-Z0-9._%-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b", ErrorMessage = "Invalid email")]
+        [RegularExpression(@"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$", ErrorMessage = "Invalid email")]
         public string Email
         {
             get { return email; }
@@ -272,6 +296,7 @@ namespace WcfServiceApp
 
         [DataMember]
         [Required]
+        [RegularExpression(@"\(?\d{3}\)?-? *\d{3}-? *-?\d{4}", ErrorMessage = "Invalid number. Must have a length of 10")]
         public string WorkMobile
         {
             get { return workmobile; }

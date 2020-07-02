@@ -69,6 +69,7 @@
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Extentions\SQLExtentions.cs" />
     <Compile Include="ServiceUser.svc.cs">
       <DependentUpon>ServiceUser.svc</DependentUpon>
     </Compile>

@@ -5,6 +5,7 @@ using System.Data;
 using System.Threading.Tasks;
 using System.Web.Configuration;
 using DevTrends.WCFDataAnnotations;
+using WcfServiceApp.Extentions;
 
 namespace WcfServiceApp
 {
@@ -17,9 +18,13 @@ namespace WcfServiceApp
         SqlConnection con =
             new SqlConnection(WebConfigurationManager.ConnectionStrings["DBConstring"].ConnectionString);
 
-        public async Task<bool> InsertUserDetails(UserDetails userInfo)
+        public async Task<ServerResponse> InsertUserDetails(UserDetails userInfo)
         {
-            bool success = false;
+            var response = new ServerResponse()
+            {
+                Success = false,
+                ErrorMessage = string.Empty
+            };
 
             try
             {
@@ -39,7 +44,7 @@ namespace WcfServiceApp
                     cmd.Parameters.AddWithValue("@userid", Guid.NewGuid().ToString("N"));
                     cmd.Parameters.AddWithValue("@firstname", userInfo.Firstname);
                     cmd.Parameters.AddWithValue("@surname", userInfo.Surname);
-                    cmd.Parameters.AddWithValue("@dob", userInfo.DOB);
+                    cmd.Parameters.AddWithValue("@dob", SQLExtentions.IsValidSqlDateTime(userInfo.DOB) ? userInfo.DOB : (DateTime)System.Data.SqlTypes.SqlDateTime.MinValue);
                     cmd.Parameters.AddWithValue("@gender", userInfo.Gender);
                     cmd.Parameters.AddWithValue("@mobile", userInfo.Mobile);
                     cmd.Parameters.AddWithValue("@email", userInfo.Email);
@@ -51,30 +56,35 @@ namespace WcfServiceApp
 
                     if (result == 1)
                     {
-                        success = true;
+                        response.Success = true;
                     }
                 }
                 else
                 {
-                    con.Close();
-                    return success;
+                    response.Success = false;
+                    response.ErrorMessage = "Email already in Use";
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Failed to make connection: " + ex);
+                response.Success = false;
+                response.ErrorMessage = "Failed to make connection: " + ex;
             }
             finally
             {
                 con.Close();
             }
 
-            return success;
+            return response;
         }
 
-        public async Task<bool> InsertUserAddress(UserAddressDetails userInfo)
+        public async Task<ServerResponse> InsertUserAddress(UserAddressDetails userInfo)
         {
-            bool success = false;
+            var response = new ServerResponse()
+            {
+                Success = false,
+                ErrorMessage = string.Empty
+            };
 
             try
             {
@@ -98,19 +108,20 @@ namespace WcfServiceApp
 
                 if (result == 1)
                 {
-                    success = true;
+                    response.Success = true;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Failed to make connection: " + ex);
+                response.Success = false;
+                response.ErrorMessage = "Failed to make connection: " + ex;
             }
             finally
             {
                 con.Close();
             }
 
-            return success;
+            return response;
         }
 
         //Get All Users
@@ -135,7 +146,7 @@ namespace WcfServiceApp
                             {
                                 var user = new UserDetails();
 
-                                user.Userid = reader.IsDBNull(0) ? null : reader.GetString(0);
+                                user.UserId = reader.IsDBNull(0) ? null : reader.GetString(0);
                                 user.Firstname = reader.IsDBNull(0) ? null : reader.GetString(1);
                                 user.Surname = reader.IsDBNull(0) ? null : reader.GetString(2);
                                 user.DOB = reader.IsDBNull(0) ? DateTime.MinValue : reader.GetDateTime(3);
@@ -177,7 +188,7 @@ namespace WcfServiceApp
                 con.Open();
                 using (SqlCommand cmd = new SqlCommand("Select * from UserTable where UserId = @userId", con))
                 {
-                    cmd.Parameters.AddWithValue("@userId", userInfo.Userid);
+                    cmd.Parameters.AddWithValue("@userId", userInfo.UserId);
                     using (SqlDataAdapter sda = new SqlDataAdapter())
                     {
                         cmd.Connection = con;
@@ -295,9 +306,13 @@ namespace WcfServiceApp
         }
 
         //Update User
-        public async Task<bool> Update(UserDetails userInfo)
+        public async Task<ServerResponse> Update(UserDetails userInfo)
         {
-            bool success = false;
+            var response = new ServerResponse()
+            {
+                Success = false,
+                ErrorMessage = string.Empty
+            };
 
             try
             {
@@ -309,12 +324,12 @@ namespace WcfServiceApp
                 {
                     cmd.Parameters.AddWithValue("@name", userInfo.Firstname);
                     cmd.Parameters.AddWithValue("@surname", userInfo.Surname);
-                    cmd.Parameters.AddWithValue("@dob", userInfo.DOB);
+                    cmd.Parameters.AddWithValue("@dob", SQLExtentions.IsValidSqlDateTime(userInfo.DOB) ? userInfo.DOB : (DateTime)System.Data.SqlTypes.SqlDateTime.MinValue);
                     cmd.Parameters.AddWithValue("@gender", userInfo.Gender);
                     cmd.Parameters.AddWithValue("@mobile", userInfo.Mobile);
                     cmd.Parameters.AddWithValue("@email", userInfo.Email);
                     cmd.Parameters.AddWithValue("@work", userInfo.WorkMobile);
-                    cmd.Parameters.AddWithValue("@userid", userInfo.Userid);
+                    cmd.Parameters.AddWithValue("@userid", userInfo.UserId);
                     cmd.Parameters.AddWithValue("@dateupdated", DateTime.Now);
 
                     cmd.Connection = con;
@@ -323,26 +338,31 @@ namespace WcfServiceApp
 
                     if (result == 1)
                     {
-                        success = true;
+                        response.Success = true;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Failed to make connection: " + ex);
+                response.Success = false;
+                response.ErrorMessage = "Failed to make connection: " + ex;
             }
             finally
             {
                 con.Close();
             }
 
-            return success;
+            return response;
         }
 
         //Update Address 
-        public async Task<bool> UpdateAddress(UserAddressDetails userInfo)
+        public async Task<ServerResponse> UpdateAddress(UserAddressDetails userInfo)
         {
-            bool success = false;
+            var response = new ServerResponse()
+            {
+                Success = false,
+                ErrorMessage = string.Empty
+            };
 
             try
             {
@@ -366,25 +386,30 @@ namespace WcfServiceApp
 
                     if (result == 1)
                     {
-                        success = true;
+                        response.Success = true;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Failed to make connection: " + ex);
+                response.Success = false;
+                response.ErrorMessage = "Failed to make connection: " + ex;
             }
             finally
             {
                 con.Close();
             }
 
-            return success;
+            return response;
         }
 
-        public async Task<bool> Delete(string Id)
+        public async Task<ServerResponse> Delete(string Id)
         {
-            bool success = false;
+            var response = new ServerResponse()
+            {
+                Success = false,
+                ErrorMessage = string.Empty
+            };
 
             try
             {
@@ -398,25 +423,31 @@ namespace WcfServiceApp
 
                     if (result == 1)
                     {
-                        success = true;
+                        response.Success = true;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Failed to make connection: " + ex);
+                response.Success = false;
+                response.ErrorMessage = "Failed to make connection: " + ex;
             }
             finally
             {
                 con.Close();
             }
 
-            return success;
+            return response;
         }
 
-        public async Task<bool> DeleteAddress(string Id)
+        public async Task<ServerResponse> DeleteAddress(string Id)
         {
-            bool success = false;
+            var response = new ServerResponse()
+            {
+                Success = false,
+                ErrorMessage = string.Empty
+            };
+
             try
             {
                 using (SqlCommand cmd = new SqlCommand("Delete From UserAddressTable Where Id = @id", con))
@@ -429,23 +460,21 @@ namespace WcfServiceApp
 
                     if (result == 1)
                     {
-                        success = true;
+                        response.Success = true;
                     }
-
-                    con.Close();
-                    return success;
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Failed to make connection: " + ex);
+                response.Success = false;
+                response.ErrorMessage = "Failed to make connection: " + ex;
             }
             finally
             {
                 con.Close();
             }
 
-            return success;
+            return response;
         }
 
         public async Task<ExportData> GetAllExportDetails()
