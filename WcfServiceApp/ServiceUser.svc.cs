@@ -18,6 +18,7 @@ namespace WcfServiceApp
         readonly SqlConnection con =
             new SqlConnection(WebConfigurationManager.ConnectionStrings["DBConstring"].ConnectionString);
 
+        //Insert User
         public async Task<ServerResponse> InsertUserDetails(UserDetails userInfo)
         {
             var response = new ServerResponse()
@@ -82,6 +83,7 @@ namespace WcfServiceApp
             return response;
         }
 
+        //Insert Address
         public async Task<ServerResponse> InsertUserAddress(UserAddressDetails userInfo)
         {
             var response = new ServerResponse()
@@ -559,8 +561,7 @@ namespace WcfServiceApp
             ExportData exportDt = new ExportData();
             try
             {
-                using (var cmd = new SqlCommand("select usrT.UserId, usrT.Firstname, usrT.Surname,usrT.Gender,usrT.Mobile,usrT.WorkMobile,usrT.Email ,addrT.AddressType,addrT.Address,addrT.City,addrT.Province,addrT.ZipCode_PostalCode " +
-                                                "from UserTable usrT left join UserAddressTable addrT on addrT.UserId = usrT.UserId Order By usrT.UserId;", con))
+                using (var cmd = new SqlCommand("select usrT.UserId, usrT.Firstname, usrT.Surname,usrT.Gender,usrT.Email ,addrT.AddressType,addrT.Address,addrT.City,addrT.Province,addrT.ZipCode_PostalCode " + "from UserTable usrT left join UserAddressTable addrT on addrT.UserId = usrT.UserId Order By usrT.UserId;", con))
                 {
                     using (var sda = new SqlDataAdapter())
                     {

@@ -84,344 +84,153 @@ namespace WcfServiceApp
     [DataContract]
     public class ServerResponse
     {
-        bool success = false;
-        string error_message = string.Empty;
+        [DataMember]
+        public bool Success { get; set; } = false;
 
         [DataMember]
-        public bool Success
-        {
-            get { return success; }
-            set { success = value; }
-
-        }
-
-        [DataMember]
-        public string ErrorMessage
-        {
-            get { return error_message; }
-            set { error_message = value; }
-        }
+        public string ErrorMessage { get; set; } = string.Empty;
     }
 
     [DataContract]
     public class ServerResponseUser
     {
-        bool success = false;
-        string error_message = string.Empty;
-        int total = 0;
-
-        IEnumerable<UserDetails> users;
+        [DataMember]
+        public bool Success { get; set; } = false;
 
         [DataMember]
-        public bool Success
-        {
-            get { return success; }
-            set { success = value; }
-        }
+        public string ErrorMessage { get; set; } = string.Empty;
 
         [DataMember]
-        public string ErrorMessage
-        {
-            get { return error_message; }
-            set { error_message = value; }
-        }
+        public int Total { get; set; } = 0;
 
         [DataMember]
-        public int Total
-        {
-            get { return total; }
-            set { total = value; }
-        }
-
-        [DataMember]
-        public IEnumerable<UserDetails> Users
-        {
-            get { return users; }
-            set { users = value; }
-        }
+        public IEnumerable<UserDetails> Users { get; set; }
     }
 
     [DataContract]
     public class ServerResponseAddress
     {
-        bool success = false;
-        string error_message = string.Empty;
-        int total = 0;
-
-        IEnumerable<UserAddressDetails> addresses;
+        [DataMember]
+        public bool Success { get; set; } = false;
 
         [DataMember]
-        public bool Success
-        {
-            get { return success; }
-            set { success = value; }
-        }
+        public string ErrorMessage { get; set; } = string.Empty;
 
         [DataMember]
-        public string ErrorMessage
-        {
-            get { return error_message; }
-            set { error_message = value; }
-        }
+        public int Total { get; set; } = 0;
 
         [DataMember]
-        public int Total
-        {
-            get { return total; }
-            set { total = value; }
-        }
-
-        [DataMember]
-        public IEnumerable<UserAddressDetails> Addresses
-        {
-            get { return addresses; }
-            set { addresses = value; }
-        }
+        public IEnumerable<UserAddressDetails> Addresses { get; set; }
     }
 
     [DataContract]
     public class UserSearchQuery
     {
-        int limit = 20;
-        int offset = 0;
-
-        UserSearchModel userquery;
+        [DataMember]
+        public int Limit { get; set; } = 20;
 
         [DataMember]
-        public int Limit
-        {
-            get { return limit; }
-            set { limit = value; }
-
-        }
+        public int Offset { get; set; } = 0;
 
         [DataMember]
-        public int Offset
-        {
-            get { return offset; }
-            set { offset = value; }
-        }
-
-        [DataMember]
-        public UserSearchModel UserQuery
-        {
-            get { return userquery; }
-            set { userquery = value; }
-
-        }
+        public UserSearchModel UserQuery { get; set; }
     }
 
     [DataContract]
     public class AddressSearchQuery
     {
-        int limit = 20;
-        int offset = 0;
-
-        AddressSearchModel addressquery;
+        [DataMember]
+        public int Limit { get; set; } = 20;
 
         [DataMember]
-        public int Limit
-        {
-            get { return limit; }
-            set { limit = value; }
-
-        }
+        public int Offset { get; set; } = 0;
 
         [DataMember]
-        public int Offset
-        {
-            get { return offset; }
-            set { offset = value; }
-        }
-
-        [DataMember]
-        public AddressSearchModel AddressQuery
-        {
-            get { return addressquery; }
-            set { addressquery = value; }
-
-        }
+        public AddressSearchModel AddressQuery { get; set; }
     }
 
     public class UserAddressDetails
     {
-        string id = string.Empty;
-        string userid = string.Empty;
-        string address = string.Empty;
-        string address_type = string.Empty;
-        string city = string.Empty;
-        string province = string.Empty;
-        int zipcode_postalcode = 0;
-        DateTime datecreated = DateTime.MinValue;
-        DateTime dateupdated = DateTime.MinValue;
-
         [DataMember]
-        public string Id
-        {
-            get { return id; }
-            set { id = value; }
-        }
+        public string Id { get; set; } = string.Empty;
 
 
         [DataMember]
         [Required]
-        public string UserId
-        {
-            get { return userid; }
-            set { userid = value; }
-        }
+        public string UserId { get; set; } = string.Empty;
 
 
         [DataMember]
         [Required]
-        public string Address
-        {
-            get { return address; }
-            set { address = value; }
-        }
+        public string Address { get; set; } = string.Empty;
 
 
         [DataMember]
         [Required]
-        public string AddressType
-        {
-            get { return address_type; }
-            set { address_type = value; }
-        }
+        public string AddressType { get; set; } = string.Empty;
 
 
         [DataMember]
         [Required]
-        public string City
-        {
-            get { return city; }
-            set { city = value; }
-        }
+        public string City { get; set; } = string.Empty;
 
         [DataMember]
         [Required]
-        public string Province
-        {
-            get { return province; }
-            set { province = value; }
-        }
+        public string Province { get; set; } = string.Empty;
 
         [DataMember]
         [Required]
-        public int ZipCode_PostalCode
-        {
-            get { return zipcode_postalcode; }
-            set { zipcode_postalcode = value; }
-        }
+        public int ZipCode_PostalCode { get; set; }
 
         [DataMember]
-        public DateTime DateCreated
-        {
-            get { return datecreated; }
-            set { datecreated = value; }
-        }
+        public DateTime DateCreated { get; set; } = DateTime.MinValue;
 
         [DataMember]
-        public DateTime DateUpdated
-        {
-            get { return dateupdated; }
-            set { dateupdated = value; }
-        }
+        public DateTime DateUpdated { get; set; } = DateTime.MinValue;
     }
 
     [DataContract]
     public class UserDetails
     {
-        string userid = string.Empty;
-        string firstname = string.Empty;
-        string surname = string.Empty;
-        DateTime dob = DateTime.MinValue;
-        string gender = string.Empty;
-        string mobile = string.Empty;
-        string email = string.Empty;
-        string workmobile = string.Empty;
-        DateTime datecreated = DateTime.MinValue;
-        DateTime dateupdated = DateTime.MinValue;
-
         [DataMember]
-        public string UserId
-        {
-            get { return userid; }
-            set { userid = value; }
-        }
+        public string UserId { get; set; } = string.Empty;
 
         [DataMember]
         [Required]
-        public string FirstName
-        {
-            get { return firstname; }
-            set { firstname = value; }
-        }
+        public string FirstName { get; set; } = string.Empty;
 
         [DataMember]
         [Required]
-        public string Surname
-        {
-            get { return surname; }
-            set { surname = value; }
-        }
+        public string Surname { get; set; } = string.Empty;
 
         [DataMember]
         [Required]
-        public DateTime DOB
-        {
-            get { return dob; }
-            set { dob = value; }
-        }
+        public DateTime DOB { get; set; } = DateTime.MinValue;
 
         [DataMember]
         [Required]
-        public string Gender
-        {
-            get { return gender; }
-            set { gender = value; }
-        }
+        public string Gender { get; set; } = string.Empty;
 
         [DataMember]
         [Required]
         [RegularExpression(@"\(?\d{3}\)?-? *\d{3}-? *-?\d{4}", ErrorMessage = "Invalid Mobile. Must have a length of 10")]
-        public string Mobile
-        {
-            get { return mobile; }
-            set { mobile = value; }
-        }
+        public string Mobile { get; set; } = string.Empty;
 
 
         [DataMember]
         [Required]
         [RegularExpression(@"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$", ErrorMessage = "Invalid Email")]
-        public string Email
-        {
-            get { return email; }
-            set { email = value; }
-        }
+        public string Email { get; set; } = string.Empty;
 
         [DataMember]
         [Required]
         [RegularExpression(@"\(?\d{3}\)?-? *\d{3}-? *-?\d{4}", ErrorMessage = "Invalid WorkMobile. Must have a length of 10")]
-        public string WorkMobile
-        {
-            get { return workmobile; }
-            set { workmobile = value; }
-        }
+        public string WorkMobile { get; set; } = string.Empty;
 
         [DataMember]
-        public DateTime DateCreated
-        {
-            get { return datecreated; }
-            set { datecreated = value; }
-        }
+        public DateTime DateCreated { get; set; } = DateTime.MinValue;
 
         [DataMember]
-        public DateTime DateUpdated
-        {
-            get { return dateupdated; }
-            set { dateupdated = value; }
-        }
+        public DateTime DateUpdated { get; set; } = DateTime.MinValue;
     }
 }
