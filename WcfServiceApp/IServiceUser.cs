@@ -5,7 +5,6 @@ using System.Data;
 using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.Threading.Tasks;
-using DevTrends.WCFDataAnnotations;
 using WcfServiceApp.Models;
 
 namespace WcfServiceApp

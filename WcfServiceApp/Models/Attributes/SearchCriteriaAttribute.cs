@@ -1,4 +1,5 @@
 ﻿using System;
+
 namespace WcfServiceApp.Models.Attributes
 {
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]

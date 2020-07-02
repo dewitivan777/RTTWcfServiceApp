@@ -458,6 +458,7 @@ namespace WcfServiceApp
             return response;
         }
 
+        //Delete User
         public async Task<ServerResponse> Delete(string Id)
         {
             var response = new ServerResponse()
@@ -472,6 +473,7 @@ namespace WcfServiceApp
                 {
                     con.Open();
                 }
+
                 using (var cmd = new SqlCommand("Delete From UserTable Where UserId = @userid", con))
                 {
                     cmd.Parameters.AddWithValue("@userid", Id);
@@ -481,7 +483,19 @@ namespace WcfServiceApp
 
                     if (result == 1)
                     {
-                        response.Success = true;
+                        //Delete Addresses' Belonging to User As well
+                        using (var cmdAddress = new SqlCommand("Delete From UserAddressTable Where UserId = @userid", con))
+                        {
+                            cmdAddress.Parameters.AddWithValue("@userid", Id);
+
+                            cmdAddress.Connection = con;
+                            int resultAddress = await cmdAddress.ExecuteNonQueryAsync();
+
+                            if (resultAddress == 1)
+                            {
+                                response.Success = true;
+                            }
+                        }
                     }
                 }
             }
@@ -498,6 +512,7 @@ namespace WcfServiceApp
             return response;
         }
 
+        //Delete Address
         public async Task<ServerResponse> DeleteAddress(string Id)
         {
             var response = new ServerResponse()
@@ -538,6 +553,7 @@ namespace WcfServiceApp
             return response;
         }
 
+        //Export User Data
         public async Task<ExportData> GetAllExportDetails()
         {
             ExportData exportDt = new ExportData();
