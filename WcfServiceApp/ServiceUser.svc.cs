@@ -15,7 +15,7 @@ namespace WcfServiceApp
     [ValidateDataAnnotationsBehavior]
     public class ServiceUser : IServiceUser
     {
-        SqlConnection con =
+        readonly SqlConnection con =
             new SqlConnection(WebConfigurationManager.ConnectionStrings["DBConstring"].ConnectionString);
 
         public async Task<ServerResponse> InsertUserDetails(UserDetails userInfo)
@@ -28,7 +28,10 @@ namespace WcfServiceApp
 
             try
             {
-                con.Open();
+                if (con.State == ConnectionState.Closed)
+                {
+                    con.Open();
+                }
                 //Check if email is already in use
                 SqlCommand validate = new SqlCommand("select count(*) from UserTable where Email = @email", con);
                 validate.Parameters.AddWithValue("@email", userInfo.Email);
@@ -36,27 +39,28 @@ namespace WcfServiceApp
 
                 if (count == 0)
                 {
-                    SqlCommand cmd =
+                    using (var cmd =
                         new SqlCommand(
                             "insert into UserTable(UserId,Firstname,Surname,DOB,Gender,Mobile,Email,WorkMobile,DateCreated,DateUpdated) values (@userid,@firstname,@surname,@dob,@gender,@mobile,@email,@work_mobile,@datecreated,@dateupdated)",
-                            con);
-
-                    cmd.Parameters.AddWithValue("@userid", Guid.NewGuid().ToString("N"));
-                    cmd.Parameters.AddWithValue("@firstname", userInfo.Firstname);
-                    cmd.Parameters.AddWithValue("@surname", userInfo.Surname);
-                    cmd.Parameters.AddWithValue("@dob", SQLExtentions.IsValidSqlDateTime(userInfo.DOB) ? userInfo.DOB : (DateTime)System.Data.SqlTypes.SqlDateTime.MinValue);
-                    cmd.Parameters.AddWithValue("@gender", userInfo.Gender);
-                    cmd.Parameters.AddWithValue("@mobile", userInfo.Mobile);
-                    cmd.Parameters.AddWithValue("@email", userInfo.Email);
-                    cmd.Parameters.AddWithValue("@work_mobile", userInfo.WorkMobile);
-                    cmd.Parameters.AddWithValue("@datecreated", DateTime.Now);
-                    cmd.Parameters.AddWithValue("@dateupdated", DateTime.Now);
-
-                    int result = await cmd.ExecuteNonQueryAsync();
-
-                    if (result == 1)
+                            con))
                     {
-                        response.Success = true;
+                        cmd.Parameters.AddWithValue("@userid", Guid.NewGuid().ToString("N"));
+                        cmd.Parameters.AddWithValue("@firstname", userInfo.FirstName);
+                        cmd.Parameters.AddWithValue("@surname", userInfo.Surname);
+                        cmd.Parameters.AddWithValue("@dob", SQLExtentions.IsValidSqlDateTime(userInfo.DOB) ? userInfo.DOB : (DateTime)System.Data.SqlTypes.SqlDateTime.MinValue);
+                        cmd.Parameters.AddWithValue("@gender", userInfo.Gender);
+                        cmd.Parameters.AddWithValue("@mobile", userInfo.Mobile);
+                        cmd.Parameters.AddWithValue("@email", userInfo.Email);
+                        cmd.Parameters.AddWithValue("@work_mobile", userInfo.WorkMobile);
+                        cmd.Parameters.AddWithValue("@datecreated", DateTime.Now);
+                        cmd.Parameters.AddWithValue("@dateupdated", DateTime.Now);
+
+                        int result = await cmd.ExecuteNonQueryAsync();
+
+                        if (result == 1)
+                        {
+                            response.Success = true;
+                        }
                     }
                 }
                 else
@@ -88,27 +92,31 @@ namespace WcfServiceApp
 
             try
             {
-                con.Open();
-                SqlCommand cmd =
-                    new SqlCommand(
-                        "insert into AddressTable(Id,UserID,AddressType,Address,City,Province,[ZipCode_PostalCode],DateCreated) values(@Id,@userid,@address_type,@address,@city,@province,@zip,@datecreated)",
-                        con);
-
-                cmd.Parameters.AddWithValue("@id", Guid.NewGuid().ToString("N"));
-                cmd.Parameters.AddWithValue("@userid", userInfo.UserId);
-                cmd.Parameters.AddWithValue("@address_type", userInfo.AddressType);
-                cmd.Parameters.AddWithValue("@address", userInfo.Address);
-                cmd.Parameters.AddWithValue("@city", userInfo.City);
-                cmd.Parameters.AddWithValue("@province", userInfo.Province);
-                cmd.Parameters.AddWithValue("@zip", userInfo.Zipcode_PostalCode);
-                cmd.Parameters.AddWithValue("@datecreated", DateTime.Now);
-                cmd.Parameters.AddWithValue("@dateupdated", DateTime.Now);
-
-                int result = await cmd.ExecuteNonQueryAsync();
-
-                if (result == 1)
+                if (con.State == ConnectionState.Closed)
                 {
-                    response.Success = true;
+                    con.Open();
+                }
+
+                using (var cmd = new SqlCommand(
+                    "insert into UserAddressTable(Id,UserID,AddressType,Address,City,Province,ZipCode_PostalCode,DateCreated,DateUpdated) values(@Id,@userid,@address_type,@address,@city,@province,@zip,@datecreated,@dateupdated)",
+                    con))
+                {
+                    cmd.Parameters.AddWithValue("@id", Guid.NewGuid().ToString("N"));
+                    cmd.Parameters.AddWithValue("@userid", userInfo.UserId);
+                    cmd.Parameters.AddWithValue("@address_type", userInfo.AddressType);
+                    cmd.Parameters.AddWithValue("@address", userInfo.Address);
+                    cmd.Parameters.AddWithValue("@city", userInfo.City);
+                    cmd.Parameters.AddWithValue("@province", userInfo.Province);
+                    cmd.Parameters.AddWithValue("@zip", userInfo.ZipCode_PostalCode);
+                    cmd.Parameters.AddWithValue("@datecreated", DateTime.Now);
+                    cmd.Parameters.AddWithValue("@dateupdated", DateTime.Now);
+
+                    int result = await cmd.ExecuteNonQueryAsync();
+
+                    if (result == 1)
+                    {
+                        response.Success = true;
+                    }
                 }
             }
             catch (Exception ex)
@@ -125,13 +133,25 @@ namespace WcfServiceApp
         }
 
         //Get All Users
-        public async Task<IEnumerable<UserDetails>> GetAll(UserSearchQuery query)
+        public async Task<ServerResponseUser> GetAll(UserSearchQuery query)
         {
-            var users = new List<UserDetails>();
+            var response = new ServerResponseUser();
             try
             {
-                con.Open();
-                using (SqlCommand cmd = new SqlCommand("Select * from UserTable Order By DateUpdated desc OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY", con))
+                if (con.State == ConnectionState.Closed)
+                {
+                    con.Open();
+                }
+
+                string cmdText = query.UserQuery != null ? $"Select * from UserTable {(query.UserQuery.HasCriteria() ? query.UserQuery.QueryString() : "")}" : $"Select * from UserTable";
+
+                //Get total
+                SqlCommand validate = new SqlCommand(cmdText.Replace("*", "count(*)"), con);
+                int total = Convert.ToInt32(validate.ExecuteScalar());
+
+                cmdText += " Order By DateUpdated desc OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY";
+
+                using (var cmd = new SqlCommand(cmdText, con))
                 {
                     cmd.Parameters.AddWithValue("@offset", query.Offset);
                     cmd.Parameters.AddWithValue("@limit", query.Limit);
@@ -140,6 +160,7 @@ namespace WcfServiceApp
 
                     if (reader.HasRows)
                     {
+                        var users = new List<UserDetails>();
                         while (reader.Read())
                         {
                             try
@@ -147,15 +168,15 @@ namespace WcfServiceApp
                                 var user = new UserDetails();
 
                                 user.UserId = reader.IsDBNull(0) ? null : reader.GetString(0);
-                                user.Firstname = reader.IsDBNull(0) ? null : reader.GetString(1);
-                                user.Surname = reader.IsDBNull(0) ? null : reader.GetString(2);
-                                user.DOB = reader.IsDBNull(0) ? DateTime.MinValue : reader.GetDateTime(3);
-                                user.Gender = reader.IsDBNull(0) ? null : reader.GetString(4);
-                                user.Mobile = reader.IsDBNull(0) ? null : reader.GetString(5);
-                                user.Email = reader.IsDBNull(0) ? null : reader.GetString(6);
-                                user.WorkMobile = reader.IsDBNull(0) ? null : reader.GetString(7);
-                                user.DateCreated = reader.IsDBNull(0) ? DateTime.MinValue : reader.GetDateTime(8);
-                                user.DateUpdated = reader.IsDBNull(0) ? DateTime.MinValue : reader.GetDateTime(9);
+                                user.FirstName = reader.IsDBNull(1) ? null : reader.GetString(1);
+                                user.Surname = reader.IsDBNull(2) ? null : reader.GetString(2);
+                                user.DOB = reader.IsDBNull(3) ? DateTime.MinValue : reader.GetDateTime(3);
+                                user.Gender = reader.IsDBNull(4) ? null : reader.GetString(4);
+                                user.Mobile = reader.IsDBNull(5) ? null : reader.GetString(5);
+                                user.Email = reader.IsDBNull(6) ? null : reader.GetString(6);
+                                user.WorkMobile = reader.IsDBNull(7) ? null : reader.GetString(7);
+                                user.DateCreated = reader.IsDBNull(8) ? DateTime.MinValue : reader.GetDateTime(8);
+                                user.DateUpdated = reader.IsDBNull(9) ? DateTime.MinValue : reader.GetDateTime(9);
 
                                 users.Add(user);
                             }
@@ -164,19 +185,24 @@ namespace WcfServiceApp
                                 Console.WriteLine("Failed to read line: " + reader.ToString() + " Error: " + ex);
                             }
                         }
+
+                        response.Success = true;
+                        response.Total = total;
+                        response.Users = users;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Failed to make connection: " + ex);
+                response.Success = false;
+                response.ErrorMessage = "Failed to make connection: " + ex;
             }
             finally
             {
                 con.Close();
             }
 
-            return users;
+            return response;
         }
 
         //Get User
@@ -185,15 +211,18 @@ namespace WcfServiceApp
             var users = new UserData();
             try
             {
-                con.Open();
-                using (SqlCommand cmd = new SqlCommand("Select * from UserTable where UserId = @userId", con))
+                if (con.State == ConnectionState.Closed)
+                {
+                    con.Open();
+                }
+                using (var cmd = new SqlCommand("Select * from UserTable where UserId = @userId", con))
                 {
                     cmd.Parameters.AddWithValue("@userId", userInfo.UserId);
-                    using (SqlDataAdapter sda = new SqlDataAdapter())
+                    using (var sda = new SqlDataAdapter())
                     {
                         cmd.Connection = con;
                         sda.SelectCommand = cmd;
-                        using (DataTable dt = new DataTable())
+                        using (var dt = new DataTable())
                         {
                             sda.Fill(users.UsersTable);
                         }
@@ -218,19 +247,23 @@ namespace WcfServiceApp
             var addresses = new UserAddress();
             try
             {
-                con.Open();
-                using (SqlCommand cmd =
+                if (con.State == ConnectionState.Closed)
+                {
+                    con.Open();
+                }
+
+                using (var cmd =
                     new SqlCommand(
                         "Select AddressType,Address,City,[ZipCode_Postal_Code],Province from UserAddressTable where Id = @id",
                         con))
                 {
                     cmd.Parameters.AddWithValue("@id", userInfo.Id);
 
-                    using (SqlDataAdapter sda = new SqlDataAdapter())
+                    using (var sda = new SqlDataAdapter())
                     {
                         cmd.Connection = con;
                         sda.SelectCommand = cmd;
-                        using (DataTable dt = new DataTable())
+                        using (var dt = new DataTable())
                         {
 
                             sda.Fill(addresses.AddressTable);
@@ -251,37 +284,51 @@ namespace WcfServiceApp
         }
 
         //Get All User's Addresses
-        public async Task<IEnumerable<UserAddressDetails>> GetUserAddress(UserAddressDetails userInfo)
+        public async Task<ServerResponseAddress> GetAllAddress(AddressSearchQuery query)
         {
-            var addresses = new List<UserAddressDetails>();
-
+            var response = new ServerResponseAddress();
             try
             {
+                if (con.State == ConnectionState.Closed)
+                {
+                    con.Open();
+                }
+
+                string cmdText = query.AddressQuery != null ? $"Select * from UserAddressTable {(query.AddressQuery.HasCriteria() ? query.AddressQuery.QueryString() : "")}" : $"Select * from UserAddressTable";
+
+                //Get total
+                SqlCommand validate = new SqlCommand(cmdText.Replace("*", "count(*)"), con);
+                int total = Convert.ToInt32(validate.ExecuteScalar());
+
+                cmdText += " Order By DateUpdated desc OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY";
+
                 using (SqlCommand cmd =
                     new SqlCommand(
-                        "Select AddressType,Address,City,[ZipCode_Postal_Code],Province from UserAddressTable where User_ID = @userid",
+                        cmdText,
                         con))
                 {
-                    cmd.Parameters.AddWithValue("@userid", userInfo.UserId);
+                    cmd.Parameters.AddWithValue("@offset", query.Offset);
+                    cmd.Parameters.AddWithValue("@limit", query.Limit);
 
                     SqlDataReader reader = await cmd.ExecuteReaderAsync();
 
                     if (reader.HasRows)
                     {
+                        var addresses = new List<UserAddressDetails>();
                         while (reader.Read())
                         {
                             try
                             {
                                 var address = new UserAddressDetails();
                                 address.Id = reader.IsDBNull(0) ? null : reader.GetString(0);
-                                address.UserId = reader.IsDBNull(0) ? null : reader.GetString(1);
-                                address.Address = reader.IsDBNull(0) ? null : reader.GetString(2);
-                                address.AddressType = reader.IsDBNull(0) ? null : reader.GetString(3);
-                                address.City = reader.IsDBNull(0) ? null : reader.GetString(4);
-                                address.Province = reader.IsDBNull(0) ? null : reader.GetString(5);
-                                address.Zipcode_PostalCode = reader.IsDBNull(0) ? 0 : reader.GetInt32(6);
-                                address.DateCreated = reader.IsDBNull(0) ? DateTime.MinValue : reader.GetDateTime(7);
-                                address.DateUpdated = reader.IsDBNull(0) ? DateTime.MinValue : reader.GetDateTime(8);
+                                address.UserId = reader.IsDBNull(1) ? null : reader.GetString(1);
+                                address.Address = reader.IsDBNull(2) ? null : reader.GetString(2);
+                                address.AddressType = reader.IsDBNull(3) ? null : reader.GetString(3);
+                                address.City = reader.IsDBNull(4) ? null : reader.GetString(4);
+                                address.Province = reader.IsDBNull(5) ? null : reader.GetString(5);
+                                address.ZipCode_PostalCode = reader.IsDBNull(6) ? 0 : reader.GetInt32(6);
+                                address.DateCreated = reader.IsDBNull(7) ? DateTime.MinValue : reader.GetDateTime(7);
+                                address.DateUpdated = reader.IsDBNull(8) ? DateTime.MinValue : reader.GetDateTime(8);
 
                                 addresses.Add(address);
                             }
@@ -290,19 +337,23 @@ namespace WcfServiceApp
                                 Console.WriteLine("Failed to read line: " + reader.ToString() + " Error: " + ex);
                             }
                         }
+                        response.Success = true;
+                        response.Total = total;
+                        response.Addresses = addresses;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Failed to make connection: " + ex);
+                response.Success = false;
+                response.ErrorMessage = "Failed to make connection: " + ex;
             }
             finally
             {
                 con.Close();
             }
 
-            return addresses;
+            return response;
         }
 
         //Update User
@@ -316,13 +367,16 @@ namespace WcfServiceApp
 
             try
             {
-                con.Open();
-                using (SqlCommand cmd =
+                if (con.State == ConnectionState.Closed)
+                {
+                    con.Open();
+                }
+                using (var cmd =
                     new SqlCommand(
                         "UPDATE UserTable SET Firstname = @name, Surname = @surname, DOB = @dob, Gender = @gender, Mobile = @mobile, Email = @email, WorkMobile = @work, DateUpdated = @dateupdated WHERE UserId = @userid",
                         con))
                 {
-                    cmd.Parameters.AddWithValue("@name", userInfo.Firstname);
+                    cmd.Parameters.AddWithValue("@name", userInfo.FirstName);
                     cmd.Parameters.AddWithValue("@surname", userInfo.Surname);
                     cmd.Parameters.AddWithValue("@dob", SQLExtentions.IsValidSqlDateTime(userInfo.DOB) ? userInfo.DOB : (DateTime)System.Data.SqlTypes.SqlDateTime.MinValue);
                     cmd.Parameters.AddWithValue("@gender", userInfo.Gender);
@@ -333,7 +387,6 @@ namespace WcfServiceApp
                     cmd.Parameters.AddWithValue("@dateupdated", DateTime.Now);
 
                     cmd.Connection = con;
-                    con.Open();
                     int result = await cmd.ExecuteNonQueryAsync();
 
                     if (result == 1)
@@ -356,7 +409,7 @@ namespace WcfServiceApp
         }
 
         //Update Address 
-        public async Task<ServerResponse> UpdateAddress(UserAddressDetails userInfo)
+        public async Task<ServerResponse> UpdateAddress(UserAddressDetails addressInfo)
         {
             var response = new ServerResponse()
             {
@@ -366,22 +419,24 @@ namespace WcfServiceApp
 
             try
             {
-                con.Open();
-                using (SqlCommand cmd =
+                if (con.State == ConnectionState.Closed)
+                {
+                    con.Open();
+                }
+                using (var cmd =
                     new SqlCommand(
                         "UPDATE UserAddressTable SET Address = @address, AddressType = @addresstype, City = @city, Province = @province, ZipCode_PostalCode = @zip, DateUpdated = @dateupdated WHERE Id = @id",
                         con))
                 {
-                    cmd.Parameters.AddWithValue("@id", userInfo.Id);
-                    cmd.Parameters.AddWithValue("@address", userInfo.Address);
-                    cmd.Parameters.AddWithValue("@addresstype", userInfo.AddressType);
-                    cmd.Parameters.AddWithValue("@city", userInfo.Id);
-                    cmd.Parameters.AddWithValue("@province", userInfo.Id);
-                    cmd.Parameters.AddWithValue("@zip", userInfo.Id);
+                    cmd.Parameters.AddWithValue("@id", addressInfo.Id);
+                    cmd.Parameters.AddWithValue("@address", addressInfo.Address);
+                    cmd.Parameters.AddWithValue("@addresstype", addressInfo.AddressType);
+                    cmd.Parameters.AddWithValue("@city", addressInfo.City);
+                    cmd.Parameters.AddWithValue("@province", addressInfo.Province);
+                    cmd.Parameters.AddWithValue("@zip", addressInfo.ZipCode_PostalCode);
                     cmd.Parameters.AddWithValue("@dateupdated", DateTime.Now);
 
                     cmd.Connection = con;
-                    con.Open();
                     int result = await cmd.ExecuteNonQueryAsync();
 
                     if (result == 1)
@@ -413,12 +468,15 @@ namespace WcfServiceApp
 
             try
             {
-                using (SqlCommand cmd = new SqlCommand("Delete From UserAddressTable Where UserId = @userid", con))
+                if (con.State == ConnectionState.Closed)
+                {
+                    con.Open();
+                }
+                using (var cmd = new SqlCommand("Delete From UserTable Where UserId = @userid", con))
                 {
                     cmd.Parameters.AddWithValue("@userid", Id);
 
                     cmd.Connection = con;
-                    con.Open();
                     int result = await cmd.ExecuteNonQueryAsync();
 
                     if (result == 1)
@@ -450,12 +508,15 @@ namespace WcfServiceApp
 
             try
             {
-                using (SqlCommand cmd = new SqlCommand("Delete From UserAddressTable Where Id = @id", con))
+                if (con.State == ConnectionState.Closed)
+                {
+                    con.Open();
+                }
+                using (var cmd = new SqlCommand("Delete From UserAddressTable Where Id = @id", con))
                 {
                     cmd.Parameters.AddWithValue("@id", Id);
 
                     cmd.Connection = con;
-                    con.Open();
                     int result = await cmd.ExecuteNonQueryAsync();
 
                     if (result == 1)
@@ -479,27 +540,28 @@ namespace WcfServiceApp
 
         public async Task<ExportData> GetAllExportDetails()
         {
-
-            using (SqlCommand cmd = new SqlCommand("select usrT.Firstname, usrT.Surname,usrT.Gender,usrT.Mobile,usrT.Work_mobile,usrT.Email ,addrT.Address_type,addrT.Address,addrT.City,addrT.Province,addrT.[Zip/Postal_Code] " +
-                "from UserTable usrT left join AddressTable addrT on addrT.User_ID = usrT.id; ", con))
+            ExportData exportDt = new ExportData();
+            try
             {
-
-                using (SqlDataAdapter sda = new SqlDataAdapter())
+                using (var cmd = new SqlCommand("select usrT.UserId, usrT.Firstname, usrT.Surname,usrT.Gender,usrT.Mobile,usrT.WorkMobile,usrT.Email ,addrT.AddressType,addrT.Address,addrT.City,addrT.Province,addrT.ZipCode_PostalCode " +
+                                                "from UserTable usrT left join UserAddressTable addrT on addrT.UserId = usrT.UserId Order By usrT.UserId;", con))
                 {
-                    cmd.Connection = con;
-                    sda.SelectCommand = cmd;
-                    using (DataTable dt = new DataTable())
+                    using (var sda = new SqlDataAdapter())
                     {
-                        ExportData exportDt = new ExportData();
-                        sda.Fill(exportDt.ExportTable);
-                        con.Close();
-                        return exportDt;
+                        cmd.Connection = con;
+                        sda.SelectCommand = cmd;
+                        using (var dt = new DataTable())
+                        {
+                            sda.Fill(exportDt.ExportTable);
+                            con.Close();
+                        }
                     }
                 }
             }
+            catch (Exception ex)
+            {
+            }
+            return exportDt;
         }
     }
 }
-
-
-

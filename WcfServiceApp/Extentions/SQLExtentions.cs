@@ -16,5 +16,18 @@ namespace WcfServiceApp.Extentions
 
             return true;
         }
+
+        public static string ToStringInstance(this object obj)
+        {
+            if (obj == null)
+            { return string.Empty; }
+
+            return obj.ToString();
+        }
+
+        public static bool HasValue(this string str)
+        {
+            return string.IsNullOrWhiteSpace(str) == false;
+        }
     }
 }

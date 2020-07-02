@@ -70,6 +70,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extentions\SQLExtentions.cs" />
+    <Compile Include="Models\AddressSearchModel.cs" />
+    <Compile Include="Models\Attributes\SearchCriteriaAttribute.cs" />
+    <Compile Include="Models\UserSearchModel.cs" />
     <Compile Include="ServiceUser.svc.cs">
       <DependentUpon>ServiceUser.svc</DependentUpon>
     </Compile>

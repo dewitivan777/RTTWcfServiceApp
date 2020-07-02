@@ -6,6 +6,7 @@ using System.Runtime.Serialization;
 using System.ServiceModel;
 using System.Threading.Tasks;
 using DevTrends.WCFDataAnnotations;
+using WcfServiceApp.Models;
 
 namespace WcfServiceApp
 {
@@ -16,17 +17,14 @@ namespace WcfServiceApp
         //Select statements
         [OperationContract]
         Task<UserData> Get(UserDetails userInfo);
-
         [OperationContract]
-        Task<IEnumerable<UserDetails>> GetAll(UserSearchQuery query);
-
+        Task<ServerResponseUser> GetAll(UserSearchQuery query);
         [OperationContract]
         Task<UserAddress> GetAddress(UserAddressDetails addressInfo);
-
         [OperationContract]
-        Task<IEnumerable<UserAddressDetails>> GetUserAddress(UserAddressDetails addressInfo);
-
+        Task<ServerResponseAddress> GetAllAddress(AddressSearchQuery addressInfo);
         [OperationContract]
+        //Export
         Task<ExportData> GetAllExportDetails();
 
         //Insert statements
@@ -38,11 +36,13 @@ namespace WcfServiceApp
         //update statements
         [OperationContract]
         Task<ServerResponse> Update(UserDetails userInfo);
+        [OperationContract]
         Task<ServerResponse> UpdateAddress(UserAddressDetails addressInfo);
 
         //Delete statements
         [OperationContract]
         Task<ServerResponse> Delete(string Id);
+        [OperationContract]
         Task<ServerResponse> DeleteAddress(string Id);
     }
 
@@ -85,32 +85,108 @@ namespace WcfServiceApp
     [DataContract]
     public class ServerResponse
     {
-         bool success = false;
-         private string error_message = string.Empty;
+        bool success = false;
+        string error_message = string.Empty;
 
-         [DataMember]
-         public bool Success
-         {
-             get { return success; }
-             set { success = value; }
-
-         }
-
-         [DataMember]
-         public string ErrorMessage
+        [DataMember]
+        public bool Success
         {
-             get { return error_message; }
-             set { error_message = value; }
-         }
+            get { return success; }
+            set { success = value; }
+
+        }
+
+        [DataMember]
+        public string ErrorMessage
+        {
+            get { return error_message; }
+            set { error_message = value; }
+        }
+    }
+
+    [DataContract]
+    public class ServerResponseUser
+    {
+        bool success = false;
+        string error_message = string.Empty;
+        int total = 0;
+
+        IEnumerable<UserDetails> users;
+
+        [DataMember]
+        public bool Success
+        {
+            get { return success; }
+            set { success = value; }
+        }
+
+        [DataMember]
+        public string ErrorMessage
+        {
+            get { return error_message; }
+            set { error_message = value; }
+        }
+
+        [DataMember]
+        public int Total
+        {
+            get { return total; }
+            set { total = value; }
+        }
+
+        [DataMember]
+        public IEnumerable<UserDetails> Users
+        {
+            get { return users; }
+            set { users = value; }
+        }
+    }
+
+    [DataContract]
+    public class ServerResponseAddress
+    {
+        bool success = false;
+        string error_message = string.Empty;
+        int total = 0;
+
+        IEnumerable<UserAddressDetails> addresses;
+
+        [DataMember]
+        public bool Success
+        {
+            get { return success; }
+            set { success = value; }
+        }
+
+        [DataMember]
+        public string ErrorMessage
+        {
+            get { return error_message; }
+            set { error_message = value; }
+        }
+
+        [DataMember]
+        public int Total
+        {
+            get { return total; }
+            set { total = value; }
+        }
+
+        [DataMember]
+        public IEnumerable<UserAddressDetails> Addresses
+        {
+            get { return addresses; }
+            set { addresses = value; }
+        }
     }
 
     [DataContract]
     public class UserSearchQuery
-    { 
+    {
         int limit = 20;
         int offset = 0;
 
-        UserDetails userquery;
+        UserSearchModel userquery;
 
         [DataMember]
         public int Limit
@@ -128,10 +204,42 @@ namespace WcfServiceApp
         }
 
         [DataMember]
-        public UserDetails UserQuery
+        public UserSearchModel UserQuery
         {
             get { return userquery; }
             set { userquery = value; }
+
+        }
+    }
+
+    [DataContract]
+    public class AddressSearchQuery
+    {
+        int limit = 20;
+        int offset = 0;
+
+        AddressSearchModel addressquery;
+
+        [DataMember]
+        public int Limit
+        {
+            get { return limit; }
+            set { limit = value; }
+
+        }
+
+        [DataMember]
+        public int Offset
+        {
+            get { return offset; }
+            set { offset = value; }
+        }
+
+        [DataMember]
+        public AddressSearchModel AddressQuery
+        {
+            get { return addressquery; }
+            set { addressquery = value; }
 
         }
     }
@@ -155,7 +263,7 @@ namespace WcfServiceApp
             set { id = value; }
         }
 
-     
+
         [DataMember]
         [Required]
         public string UserId
@@ -164,7 +272,7 @@ namespace WcfServiceApp
             set { userid = value; }
         }
 
-      
+
         [DataMember]
         [Required]
         public string Address
@@ -173,7 +281,7 @@ namespace WcfServiceApp
             set { address = value; }
         }
 
-       
+
         [DataMember]
         [Required]
         public string AddressType
@@ -182,7 +290,7 @@ namespace WcfServiceApp
             set { address_type = value; }
         }
 
-       
+
         [DataMember]
         [Required]
         public string City
@@ -201,7 +309,7 @@ namespace WcfServiceApp
 
         [DataMember]
         [Required]
-        public int Zipcode_PostalCode
+        public int ZipCode_PostalCode
         {
             get { return zipcode_postalcode; }
             set { zipcode_postalcode = value; }
@@ -245,7 +353,7 @@ namespace WcfServiceApp
 
         [DataMember]
         [Required]
-        public string Firstname
+        public string FirstName
         {
             get { return firstname; }
             set { firstname = value; }
@@ -277,7 +385,7 @@ namespace WcfServiceApp
 
         [DataMember]
         [Required]
-        [RegularExpression(@"\(?\d{3}\)?-? *\d{3}-? *-?\d{4}", ErrorMessage = "Invalid number. Must have a length of 10")]
+        [RegularExpression(@"\(?\d{3}\)?-? *\d{3}-? *-?\d{4}", ErrorMessage = "Invalid Mobile. Must have a length of 10")]
         public string Mobile
         {
             get { return mobile; }
@@ -287,7 +395,7 @@ namespace WcfServiceApp
 
         [DataMember]
         [Required]
-        [RegularExpression(@"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$", ErrorMessage = "Invalid email")]
+        [RegularExpression(@"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$", ErrorMessage = "Invalid Email")]
         public string Email
         {
             get { return email; }
@@ -296,7 +404,7 @@ namespace WcfServiceApp
 
         [DataMember]
         [Required]
-        [RegularExpression(@"\(?\d{3}\)?-? *\d{3}-? *-?\d{4}", ErrorMessage = "Invalid number. Must have a length of 10")]
+        [RegularExpression(@"\(?\d{3}\)?-? *\d{3}-? *-?\d{4}", ErrorMessage = "Invalid WorkMobile. Must have a length of 10")]
         public string WorkMobile
         {
             get { return workmobile; }
